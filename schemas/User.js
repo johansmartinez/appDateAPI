@@ -7,7 +7,8 @@ const UserSchema= mongoose.Schema({
     description:{type:String},
     password:{type:String},
     interests: [String],
-    images:[String]
+    images:[String],
+    likesRecived:[{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
 });
 
 const User = mongoose.model('User', UserSchema);
