@@ -1,10 +1,9 @@
 const express = require('express');
 const Route = express.Router();
 const {crypt,compare} = require('../crypt');
-const {key} = require('../keys/imageKey');
 const multer = require('multer');
 const path = require('path');
-const {upload, uploads} = require('../image/imagBB');
+const {upload} = require('../image/imagBB');
 
 const User = require('../schemas/User');
 const Chats = require('../schemas/Chats');
@@ -22,8 +21,8 @@ const img=multer({storage});
 
 //singup
 Route.post('/singup', async (req,res)=>{
-    const {name, lastname, email, password, interests} =req.body;
-    const u1=new User({name, lastname, email, password:await crypt(password), interests});
+    const {name, lastname, email, password,description, interests} =req.body;
+    const u1=new User({name, lastname, email,description, password:await crypt(password), interests});
     if (await validateUser(email)) {
         u1.save((err,user)=>{
             if (err) {
@@ -82,9 +81,46 @@ Route.post('/images',img.array('images'),async (req,res)=>{
 */
 
 //update
+Route.put('/data', (req,res)=>{
+    const {id, name , lastname, description, interests }=req.body;
+    User.findByIdAndUpdate(id, {name , lastname, description, interests}, (err,data)=>{
+        if (err || !data) res.status(400).send('No se ha podido editar el usuario');
+        else res.send(true);
+    });
+});
+
+//delete
+Route.delete('/image', (req,res)=>{
+    const { id, url }=req.body;
+    User.findByIdAndUpdate(id, {$pull:{images:url}},(err,data)=>{
+        if (err || !data) res.status(400).send('No se ha podido eliminar la foto');
+        else res.send(true);
+    });
+});
+
+Route.delete('/account', (req,res)=>{
+    const {id}=req.body;
+    User.findByIdAndDelete(id, (err,data)=>{
+        if (err || !data) res.status(400).send('No se ha podido eliminar la cuenta');
+        else {
+            Chats.deleteMany({$or:[{'chat.destination':id}, {user:id}]}).remove((err,data)=>{
+                if (err ) res.status(400).send('No se ha podido eliminar los chats')
+                else res.send(true)
+            });
+        }
+    });
+});
 
 //get
-
+Route.get('/id/:id',(req,res)=>{
+    User.findById(req.params.id,(err , data)=>{
+        if (err || !data) res.status(400).send('No se ha podido encontrar el usuario');
+        else {
+            const {_id:id, name, lastname, description, interests, images}=data;
+            res.send({id, name, lastname, description, interests, images});
+        }
+    });
+});
 
 async function validateUser(email) {
     return await User.find({email})

@@ -7,7 +7,9 @@ const UserSchema= mongoose.Schema({
     description:{type:String},
     password:{type:String},
     interests: [String],
+    status:[String],
     images:[String],
+    matches:[{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     likesRecived:[{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
 });
 
